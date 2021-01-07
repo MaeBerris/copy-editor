@@ -60,7 +60,7 @@ Would have the JSON representation:
 
 We have taken a first pass at parsing input text into this JSON format. But it is quite fragile. Occassionally, when copy/pasting text into the text box, our parsing logic cannot extract the text in the HTML that is copied, which results in skipping over a block of text entirely.
 
-Is there a way to make parsing incoming pasted text more robust? Such that I can copy/paste text written in a Google Doc, or from a website, have the parsing logic be able to extract the text I pasted, along with a reasonable guess as to whether the texts hould be bolded, italicized, etc?
+Is there a way to make parsing incoming pasted text more robust? Such that I can copy/paste text written in a Google Doc, or from a website, have the parsing logic be able to extract the text I pasted, along with a reasonable guess as to whether the text should be bolded, italicized, etc?
 
 
 ## To run
