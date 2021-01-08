@@ -13,7 +13,7 @@ import Colors from "./constants/colors";
 import Spacing from "./constants/spacing";
 
 const parseNodes = (nodes, baseStyle = "normal") => {
-  console.log("nodes", nodes);
+  console.log("nodes", nodes, nodes[0].name);
   let parsed = [];
   for (const node of nodes) {
     const { attribs, children, data, name } = node;
@@ -22,7 +22,7 @@ const parseNodes = (nodes, baseStyle = "normal") => {
         style: baseStyle,
         content: data,
       });
-    } else if (name === "b") {
+    } else if (name === "b" || name === "strong") {
       parsed = parsed.concat(
         parseNodes(children, baseStyle === "italic" ? "bold-italic" : "bold")
       );
@@ -32,10 +32,25 @@ const parseNodes = (nodes, baseStyle = "normal") => {
       );
     } else if (name === "span") {
       const { style } = attribs;
+      let isItalic;
+      let isBold;
       // The detection of attributes here might be too specific. Is this
       // really the best way to do this?
-      const isItalic = !!style.match(/italic/);
-      const isBold = !!style.match(/weight:600/);
+      if (style) {
+        let styleObject = {};
+        style.split(";").forEach((attributeAndValue) => {
+          const attribute = attributeAndValue.split(":")[0].trim();
+          const value = attributeAndValue.split(":")[1];
+          if (attribute === "font-weight") {
+            styleObject["fontWeight"] = value;
+          }
+        });
+        console.log("styleObject", styleObject, style.split(";"));
+        isItalic = !!style.match(/italic/);
+        isBold =
+          styleObject.fontWeight > 400 || styleObject.fontWeight === "bold";
+        console.log(style);
+      }
       if (isItalic && !isBold) {
         parsed = parsed.concat(parseNodes(children, "italic"));
       } else if (!isItalic && isBold) {
@@ -69,6 +84,7 @@ const parseHtml = (html) =>
 
 const App = () => {
   const [html, setHtml] = React.useState("<div>Edit text here.</div>");
+  console.log("html", html);
   const [parsed, setParsed] = React.useState(parseHtml(html));
 
   const handleChange = (e) => {
