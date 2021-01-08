@@ -13,7 +13,6 @@ import Colors from "./constants/colors";
 import Spacing from "./constants/spacing";
 
 const parseNodes = (nodes, baseStyle = "normal") => {
-  console.log("nodes", nodes, nodes[0].name);
   let parsed = [];
   for (const node of nodes) {
     const { attribs, children, data, name } = node;
@@ -30,7 +29,7 @@ const parseNodes = (nodes, baseStyle = "normal") => {
       parsed = parsed.concat(
         parseNodes(children, baseStyle === "bold" ? "bold-italic" : "italic")
       );
-    } else if (name === "span") {
+    } else if (name) {
       const { style } = attribs;
       let isItalic;
       let isBold;
@@ -38,18 +37,21 @@ const parseNodes = (nodes, baseStyle = "normal") => {
       // really the best way to do this?
       if (style) {
         let styleObject = {};
+        //this splits the style string into an array, looks for font-weight attribute and value and saves that key and value to an object
         style.split(";").forEach((attributeAndValue) => {
           const attribute = attributeAndValue.split(":")[0].trim();
           const value = attributeAndValue.split(":")[1];
           if (attribute === "font-weight") {
             styleObject["fontWeight"] = value;
           }
+          if (attribute === "font-style") {
+            styleObject["fontStyle"] = value.trim();
+          }
         });
-        console.log("styleObject", styleObject, style.split(";"));
-        isItalic = !!style.match(/italic/);
+
+        isItalic = styleObject.fontStyle === "italic";
         isBold =
           styleObject.fontWeight > 400 || styleObject.fontWeight === "bold";
-        console.log(style);
       }
       if (isItalic && !isBold) {
         parsed = parsed.concat(parseNodes(children, "italic"));
