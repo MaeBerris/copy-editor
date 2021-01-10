@@ -105,6 +105,7 @@ const App = () => {
       return;
     }
     setHtml(`<div>${e.target.value}</div>`);
+    // setHtml(e.target.value);
   };
 
   React.useEffect(() => {
