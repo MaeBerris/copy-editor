@@ -39,6 +39,7 @@ const checkStyling = (style) => {
 };
 
 const parseNodes = (nodes, baseStyle = "normal") => {
+  console.log("nodes", nodes);
   let parsed = [];
   for (const node of nodes) {
     const { attribs, children, data, name, parent } = node;
@@ -79,7 +80,7 @@ const parseHtml = (html) =>
   ReactHtmlParser(html, {
     transform: (node, i) => {
       const { children, name, parent } = node;
-      if ((!parent && name === "div") || name === "span") {
+      if (!parent && name) {
         const parsed = parseNodes(children);
         return parsed.length > 0
           ? {
@@ -94,17 +95,16 @@ const parseHtml = (html) =>
 
 const App = () => {
   const [html, setHtml] = React.useState("<div>Edit text here.</div>");
-  console.log("html", html);
+  console.log(html);
   const [parsed, setParsed] = React.useState(parseHtml(html));
 
   const handleChange = (e) => {
-    console.log("target value:", e.target.value);
-    // if (e.target.value === "") {
-    //   console.log("inside of if statement");
-    //   setValue(`<div>${e.target.value}</div>`)
-    //   return;
-    // }
-    setHtml(e.target.value);
+    console.log(e.target.value.search("<div>"));
+    if (e.target.value.search("<div>") === 0) {
+      setHtml(e.target.value);
+      return;
+    }
+    setHtml(`<div>${e.target.value}</div>`);
   };
 
   React.useEffect(() => {
