@@ -12,6 +12,32 @@ import styled from "styled-components";
 import Colors from "./constants/colors";
 import Spacing from "./constants/spacing";
 
+const checkStyling = (style) => {
+  let styleObject = {};
+  let isItalic;
+  let isBold;
+
+  if (style) {
+    //this splits the style string into an array, looks for font-weight attribute and value and saves that key and value to an object
+    style.split(";").forEach((attributeAndValue) => {
+      const attribute = attributeAndValue.split(":")[0].trim();
+      let value = attributeAndValue.split(":")[1];
+
+      if (attribute === "font-weight") {
+        styleObject["fontWeight"] = value;
+      }
+      if (attribute === "font-style") {
+        styleObject["fontStyle"] = value.trim();
+      }
+    });
+
+    isItalic = styleObject.fontStyle === "italic";
+    isBold = styleObject.fontWeight > 400 || styleObject.fontWeight === "bold";
+  }
+
+  return { isItalic, isBold };
+};
+
 const parseNodes = (nodes, baseStyle = "normal") => {
   let parsed = [];
   for (const node of nodes) {
@@ -32,32 +58,9 @@ const parseNodes = (nodes, baseStyle = "normal") => {
       );
     } else if (name) {
       const { style } = attribs;
-      let isItalic;
-      let isBold;
-      // The detection of attributes here might be too specific. Is this
-      // really the best way to do this?
-      if (style) {
-        let styleObject = {}; //{fontWeight: 555; fontStyle: italic }
-        //this splits the style string into an array, looks for font-weight attribute and value and saves that key and value to an object
-        //refactor into it's own function
-        style.split(";").forEach((attributeAndValue) => {
-          const attribute = attributeAndValue.split(":")[0].trim();
-          let value = attributeAndValue.split(":")[1];
-          if (value === "inherit") {
-            //check for parent
-          }
-          if (attribute === "font-weight") {
-            styleObject["fontWeight"] = value;
-          }
-          if (attribute === "font-style") {
-            styleObject["fontStyle"] = value.trim();
-          }
-        });
 
-        isItalic = styleObject.fontStyle === "italic";
-        isBold =
-          styleObject.fontWeight > 400 || styleObject.fontWeight === "bold";
-      }
+      const { isItalic, isBold } = checkStyling(style);
+
       if (isItalic && !isBold) {
         parsed = parsed.concat(parseNodes(children, "italic"));
       } else if (!isItalic && isBold) {
