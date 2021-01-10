@@ -13,116 +13,140 @@ import Colors from "./constants/colors";
 import Spacing from "./constants/spacing";
 
 const parseNodes = (nodes, baseStyle = "normal") => {
-    let parsed = [];
-    for (const node of nodes) {
-        const { attribs, children, data, name } = node;
-        if (!name) {
-            parsed = parsed.concat({
-                style: baseStyle,
-                content: data,
-            });
-        } else if (name === "b") {
-            parsed = parsed.concat(
-                parseNodes(
-                    children,
-                    baseStyle === "italic" ? "bold-italic" : "bold"
-                )
-            );
-        } else if (name === "i") {
-            parsed = parsed.concat(
-                parseNodes(
-                    children,
-                    baseStyle === "bold" ? "bold-italic" : "italic"
-                )
-            );
-        } else if (name === "span") {
-            const { style } = attribs;
-            // The detection of attributes here might be too specific. Is this
-            // really the best way to do this?
-            const isItalic = !!style.match(/italic/);
-            const isBold = !!style.match(/weight:600/);
-            if (isItalic && !isBold) {
-                parsed = parsed.concat(parseNodes(children, "italic"));
-            } else if (!isItalic && isBold) {
-                parsed = parsed.concat(parseNodes(children, "bold"));
-            } else if (isItalic && isBold) {
-                parsed = parsed.concat(parseNodes(children, "bold-italic"));
-            } else {
-                parsed = parsed.concat(parseNodes(children, "normal"));
-            }
-        }
+  let parsed = [];
+  for (const node of nodes) {
+    const { attribs, children, data, name, parent } = node;
+    if (!name) {
+      parsed = parsed.concat({
+        style: baseStyle,
+        content: data,
+      });
+    } else if (name === "b" || name === "strong") {
+      //check if strong and IF it is not styled
+      parsed = parsed.concat(
+        parseNodes(children, baseStyle === "italic" ? "bold-italic" : "bold")
+      );
+    } else if (name === "i" || name === "em") {
+      parsed = parsed.concat(
+        parseNodes(children, baseStyle === "bold" ? "bold-italic" : "italic")
+      );
+    } else if (name) {
+      const { style } = attribs;
+      let isItalic;
+      let isBold;
+      // The detection of attributes here might be too specific. Is this
+      // really the best way to do this?
+      if (style) {
+        let styleObject = {}; //{fontWeight: 555; fontStyle: italic }
+        //this splits the style string into an array, looks for font-weight attribute and value and saves that key and value to an object
+        //refactor into it's own function
+        style.split(";").forEach((attributeAndValue) => {
+          const attribute = attributeAndValue.split(":")[0].trim();
+          let value = attributeAndValue.split(":")[1];
+          if (value === "inherit") {
+            //check for parent
+          }
+          if (attribute === "font-weight") {
+            styleObject["fontWeight"] = value;
+          }
+          if (attribute === "font-style") {
+            styleObject["fontStyle"] = value.trim();
+          }
+        });
+
+        isItalic = styleObject.fontStyle === "italic";
+        isBold =
+          styleObject.fontWeight > 400 || styleObject.fontWeight === "bold";
+      }
+      if (isItalic && !isBold) {
+        parsed = parsed.concat(parseNodes(children, "italic"));
+      } else if (!isItalic && isBold) {
+        parsed = parsed.concat(parseNodes(children, "bold"));
+      } else if (isItalic && isBold) {
+        parsed = parsed.concat(parseNodes(children, "bold-italic"));
+      } else {
+        parsed = parsed.concat(parseNodes(children, "normal"));
+      }
     }
-    return parsed;
+  }
+  return parsed;
 };
 
 const parseHtml = (html) =>
-    ReactHtmlParser(html, {
-        transform: (node, i) => {
-            const { children, name, parent } = node;
-            if (!parent && name === "div") {
-                const parsed = parseNodes(children);
-                return parsed.length > 0
-                    ? {
-                          content: parsed,
-                      }
-                    : null;
-            } else {
-                return null;
+  ReactHtmlParser(html, {
+    transform: (node, i) => {
+      const { children, name, parent } = node;
+      if ((!parent && name === "div") || name === "span") {
+        const parsed = parseNodes(children);
+        return parsed.length > 0
+          ? {
+              content: parsed,
             }
-        },
-    }).filter((node) => !!node);
+          : null;
+      } else {
+        return null;
+      }
+    },
+  }).filter((node) => !!node);
 
 const App = () => {
-    const [html, setHtml] = React.useState("<div>Edit text here.</div>");
-    const [parsed, setParsed] = React.useState(parseHtml(html));
+  const [html, setHtml] = React.useState("<div>Edit text here.</div>");
+  console.log("html", html);
+  const [parsed, setParsed] = React.useState(parseHtml(html));
 
-    const handleChange = (e) => {
-        setHtml(e.target.value);
-    };
+  const handleChange = (e) => {
+    console.log("target value:", e.target.value);
+    // if (e.target.value === "") {
+    //   console.log("inside of if statement");
+    //   setValue(`<div>${e.target.value}</div>`)
+    //   return;
+    // }
+    setHtml(e.target.value);
+  };
 
-    React.useEffect(() => {
-        const parsedHtml = parseHtml(html);
-        setParsed(parsedHtml);
-    }, [html]);
+  React.useEffect(() => {
+    const parsedHtml = parseHtml(html);
+    setParsed(parsedHtml);
+  }, [html]);
 
-    return (
-        <Wrapper>
-            <ContentEditable
-                html={html}
-                onChange={handleChange}
-                style={{
-                    flex: 1,
-                    maxWidth: "50vw",
-                    fontSize: "17px",
-                    fontFamily: "sans-serif",
-                    fontWeight: 300,
-                    lineHeight: "24px",
-                    height: "100vh",
-                    borderRight: `1px solid ${Colors.offBlack}`,
-                    padding: `${Spacing.small}px`,
-                }}
-            />
-            <Strut size={24} />
-            <JSONPretty
-                data={parsed}
-                style={{
-                    flex: 1,
-                    overflowX: "scroll",
-                }}
-            />
-        </Wrapper>
-    );
+  return (
+    <Wrapper>
+      <ContentEditable
+        html={html}
+        onChange={handleChange}
+        style={{
+          flex: 1,
+          maxWidth: "50vw",
+          fontSize: "17px",
+          fontFamily: "sans-serif",
+          fontWeight: 300,
+          lineHeight: "24px",
+          height: "100vh",
+          borderRight: `1px solid ${Colors.offBlack}`,
+          padding: `${Spacing.small}px`,
+        }}
+      ></ContentEditable>
+      <Strut size={24} />
+      <JSONPretty
+        data={parsed}
+        style={{
+          flex: 1,
+          overflowX: "scroll",
+        }}
+      />
+    </Wrapper>
+  );
 };
 
 const Wrapper = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
 `;
 
 const Strut = styled.div`
-    flex-basis: ${(props) => props.size}px;
+  flex-basis: ${(props) => props.size}px;
 `;
 
 export default App;
