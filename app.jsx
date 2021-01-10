@@ -15,17 +15,18 @@ import Spacing from "./constants/spacing";
 const parseNodes = (nodes, baseStyle = "normal") => {
   let parsed = [];
   for (const node of nodes) {
-    const { attribs, children, data, name } = node;
+    const { attribs, children, data, name, parent } = node;
     if (!name) {
       parsed = parsed.concat({
         style: baseStyle,
         content: data,
       });
     } else if (name === "b" || name === "strong") {
+      //check if strong and IF it is not styled
       parsed = parsed.concat(
         parseNodes(children, baseStyle === "italic" ? "bold-italic" : "bold")
       );
-    } else if (name === "i") {
+    } else if (name === "i" || name === "em") {
       parsed = parsed.concat(
         parseNodes(children, baseStyle === "bold" ? "bold-italic" : "italic")
       );
@@ -36,11 +37,15 @@ const parseNodes = (nodes, baseStyle = "normal") => {
       // The detection of attributes here might be too specific. Is this
       // really the best way to do this?
       if (style) {
-        let styleObject = {};
+        let styleObject = {}; //{fontWeight: 555; fontStyle: italic }
         //this splits the style string into an array, looks for font-weight attribute and value and saves that key and value to an object
+        //refactor into it's own function
         style.split(";").forEach((attributeAndValue) => {
           const attribute = attributeAndValue.split(":")[0].trim();
-          const value = attributeAndValue.split(":")[1];
+          let value = attributeAndValue.split(":")[1];
+          if (value === "inherit") {
+            //check for parent
+          }
           if (attribute === "font-weight") {
             styleObject["fontWeight"] = value;
           }
@@ -71,7 +76,7 @@ const parseHtml = (html) =>
   ReactHtmlParser(html, {
     transform: (node, i) => {
       const { children, name, parent } = node;
-      if (!parent && name === "div") {
+      if ((!parent && name === "div") || name === "span") {
         const parsed = parseNodes(children);
         return parsed.length > 0
           ? {
@@ -90,6 +95,12 @@ const App = () => {
   const [parsed, setParsed] = React.useState(parseHtml(html));
 
   const handleChange = (e) => {
+    console.log("target value:", e.target.value);
+    // if (e.target.value === "") {
+    //   console.log("inside of if statement");
+    //   setValue(`<div>${e.target.value}</div>`)
+    //   return;
+    // }
     setHtml(e.target.value);
   };
 
@@ -114,7 +125,7 @@ const App = () => {
           borderRight: `1px solid ${Colors.offBlack}`,
           padding: `${Spacing.small}px`,
         }}
-      />
+      ></ContentEditable>
       <Strut size={24} />
       <JSONPretty
         data={parsed}
