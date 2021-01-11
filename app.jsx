@@ -16,6 +16,8 @@ const checkStyling = (style) => {
   let styleObject = {};
   let isItalic;
   let isBold;
+  let isFontStyleInherit;
+  let isFontWeightInherit;
 
   if (style) {
     //this splits the style string into an array, looks for font-weight attribute and value and saves that key and value to an object
@@ -33,9 +35,12 @@ const checkStyling = (style) => {
 
     isItalic = styleObject.fontStyle === "italic";
     isBold = styleObject.fontWeight > 400 || styleObject.fontWeight === "bold";
+    isFontStyleInherit = styleObject.fontStyle === "inherit";
+    isFontWeightInherit = styleObject.fontWeight === "inherit";
   }
+  console.log({ isItalic, isBold, isFontStyleInherit, isFontWeightInherit });
 
-  return { isItalic, isBold };
+  return { isItalic, isBold, isFontStyleInherit, isFontWeightInherit };
 };
 
 const parseNodes = (nodes, baseStyle = "normal") => {
@@ -60,9 +65,15 @@ const parseNodes = (nodes, baseStyle = "normal") => {
     } else if (name) {
       const { style } = attribs;
 
-      const { isItalic, isBold } = checkStyling(style);
-
-      if (isItalic && !isBold) {
+      const {
+        isItalic,
+        isBold,
+        isFontWeightInherit,
+        isFontStyleInherit,
+      } = checkStyling(style);
+      if (isFontStyleInherit) {
+        parsed = parsed.concat(parseNodes(children, baseStyle));
+      } else if (isItalic && !isBold) {
         parsed = parsed.concat(parseNodes(children, "italic"));
       } else if (!isItalic && isBold) {
         parsed = parsed.concat(parseNodes(children, "bold"));
@@ -94,7 +105,9 @@ const parseHtml = (html) =>
   }).filter((node) => !!node);
 
 const App = () => {
-  const [html, setHtml] = React.useState("<div>Edit text here.</div>");
+  const [html, setHtml] = React.useState(
+    '<div><p style="font-style: italic">this is <span style="font-style: inherit">inherit</span></p></div>'
+  );
   console.log(html);
   const [parsed, setParsed] = React.useState(parseHtml(html));
 
