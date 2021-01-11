@@ -26,7 +26,7 @@ const checkStyling = (style) => {
       let value = attributeAndValue.split(":")[1];
 
       if (attribute === "font-weight") {
-        styleObject["fontWeight"] = value;
+        styleObject["fontWeight"] = value.trim();
       }
       if (attribute === "font-style") {
         styleObject["fontStyle"] = value.trim();
@@ -48,6 +48,7 @@ const parseNodes = (nodes, baseStyle = "normal") => {
   let parsed = [];
   for (const node of nodes) {
     const { attribs, children, data, name, parent } = node;
+    // const { style } = attribs;
     if (!name) {
       parsed = parsed.concat({
         style: baseStyle,
@@ -71,16 +72,27 @@ const parseNodes = (nodes, baseStyle = "normal") => {
         isFontWeightInherit,
         isFontStyleInherit,
       } = checkStyling(style);
-      if (isFontStyleInherit) {
-        parsed = parsed.concat(parseNodes(children, baseStyle));
-      } else if (isItalic && !isBold) {
-        parsed = parsed.concat(parseNodes(children, "italic"));
+
+      if (isItalic && !isBold) {
+        if (isFontWeightInherit && baseStyle === "bold") {
+          parsed = parsed.concat(parseNodes(children, "bold-italic"));
+        } else {
+          parsed = parsed.concat(parseNodes(children, "italic"));
+        }
       } else if (!isItalic && isBold) {
-        parsed = parsed.concat(parseNodes(children, "bold"));
+        if (isFontStyleInherit && baseStyle === "italic") {
+          parsed = parsed.concat(parseNodes(children, "bold-italic"));
+        } else {
+          parsed = parsed.concat(parseNodes(children, "bold"));
+        }
       } else if (isItalic && isBold) {
         parsed = parsed.concat(parseNodes(children, "bold-italic"));
       } else {
-        parsed = parsed.concat(parseNodes(children, "normal"));
+        if (isFontStyleInherit || isFontWeightInherit) {
+          parsed = parsed.concat(parseNodes(children, baseStyle));
+        } else {
+          parsed = parsed.concat(parseNodes(children, "normal"));
+        }
       }
     }
   }
@@ -106,7 +118,7 @@ const parseHtml = (html) =>
 
 const App = () => {
   const [html, setHtml] = React.useState(
-    '<div><p style="font-style: italic">this is <span style="font-style: inherit">inherit</span></p></div>'
+    '<div><p style="font-style: italic">this is <span style="font-style: inherit; font-weight: bold">inherit</span></p></div>'
   );
   console.log(html);
   const [parsed, setParsed] = React.useState(parseHtml(html));
