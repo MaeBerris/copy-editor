@@ -38,17 +38,15 @@ const checkStyling = (style) => {
     isFontStyleInherit = styleObject.fontStyle === "inherit";
     isFontWeightInherit = styleObject.fontWeight === "inherit";
   }
-  console.log({ isItalic, isBold, isFontStyleInherit, isFontWeightInherit });
 
   return { isItalic, isBold, isFontStyleInherit, isFontWeightInherit };
 };
 
 const parseNodes = (nodes, baseStyle = "normal") => {
-  console.log("nodes", nodes);
   let parsed = [];
   for (const node of nodes) {
     const { attribs, children, data, name, parent } = node;
-    // const { style } = attribs;
+
     if (!name) {
       parsed = parsed.concat({
         style: baseStyle,
@@ -118,19 +116,17 @@ const parseHtml = (html) =>
 
 const App = () => {
   const [html, setHtml] = React.useState(
-    '<div><p style="font-style: italic">this is <span style="font-style: inherit; font-weight: bold">inherit</span></p></div>'
+    '<div><p style="font-style: italic">Please edit text <span style="font-style: inherit; font-weight: bold">here</span></p></div>'
   );
-  console.log(html);
+
   const [parsed, setParsed] = React.useState(parseHtml(html));
 
   const handleChange = (e) => {
-    console.log(e.target.value.search("<div>"));
     if (e.target.value.search("<div>") === 0) {
       setHtml(e.target.value);
       return;
     }
     setHtml(`<div>${e.target.value}</div>`);
-    // setHtml(e.target.value);
   };
 
   React.useEffect(() => {
